@@ -1,0 +1,374 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Archivo Variable", "Helvetica Neue", Arial, ui-sans-serif, system-ui, sans-serif;
+  --font-arabic: "Cairo Variable", "Segoe UI", Tahoma, ui-sans-serif, system-ui, sans-serif;
+
+  /* ------------------------------- palette -------------------------------
+   * A periwinkle-neutral family: a tinted blue-grey ground with one brand
+   * blue and one accent orange. No pure #000/#fff anywhere, and no neutral
+   * background comes within 1.2:1 of white - the page reads as a colour,
+   * not as "almost white".
+   * Light-mode layering, lightest to darkest:
+   *   surface (raised) > paper (page) > chalk (frames, alternate sections) >
+   *   fog (decorative dividers only).
+   * "on-brand" is the content colour for the brand fills and the ink accent
+   * panels; inside those panels it re-points in dark mode (see below).
+   * ---------------------------------------------------------------------- */
+  --color-paper: #d0d9f7;
+  --color-surface: #e2e7fa;
+  --color-chalk: #bac7ef;
+  --color-fog: #a3b1e0;
+  --color-line: #4f5e8c;
+  --color-graphite: #36415f;
+  --color-ink: #0b1330;
+  --color-brand: #2442e8;
+  --color-brand-strong: #1b33c9;
+  --color-brand-pressed: #1426a8;
+  --color-accent: #ff5c28;
+  --color-accent-strong: #e8481a;
+  --color-accent-ink: #0b1330;
+  --color-on-brand: #f4f6ff;
+  --color-danger: #9e1c16;
+  --color-danger-strong: #8f1d17;
+  /* Focus-ring colour; points at the brand blue and is re-pointed per theme. */
+  --color-ring: var(--color-brand);
+
+  /* Photo plate: studio shots ship with a baked-in white backdrop (or a
+     transparent one) and are blended with `multiply`, so this is the colour
+     that white becomes. Light mode matches `chalk` exactly - the tint of the
+     image frames - so the photo edge never shows a rectangle; dark mode keeps
+     its own paler tint on purpose (multiplying onto a dark surface would sink
+     the shoe), which is why it is its own token. */
+  --color-plate: #bac7ef;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* The page colour is painted by the canvas (the html rule in index.html
+     mirrors --color-paper per theme). The body must NOT paint a background
+     of its own: an opaque body paint sits ABOVE the negative z-index layer,
+     and the hero's viewport-fixed photo lives there (it has to slide under
+     every section on the page - see HeroSection). */
+  body {
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Tailwind v4 preflight no longer forces `cursor: pointer` on buttons (v3
+     did), so every native control would show the arrow cursor despite being
+     clickable. Restore the expected affordance for enabled controls; disabled
+     ones stay default and are non-interactive anyway. */
+  button:not(:disabled),
+  select:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  /* Focus ring: brand on light surfaces, paper on dark ones, inverted for
+     the bright "dark accent" panels in dark mode. */
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--color-brand);
+    color: var(--color-on-brand);
+  }
+
+  /* Native modal dialogs (delete-account confirmation): the scrim is the
+     deep-navy ink value in BOTH themes, so the page dims behind the dialog
+     even where the dark palette re-points `ink` to a light colour. */
+  dialog::backdrop {
+    background-color: rgb(11 19 48 / 0.6);
+  }
+}
+
+:root {
+  --color-ring: var(--color-brand);
+}
+
+/* Dark accent panels (announcement bar, mobile menu) take the on-brand content
+   colour and an on-brand focus ring while they are dark; in dark mode they flip
+   bright and their content flips to paper (below). The story band is not one of
+   those: it keeps an ink-dark panel in both themes (see [data-story]). */
+[data-theme="dark"] {
+  --color-ring: var(--color-on-brand);
+}
+
+/* The story band: an ink panel in light mode; in dark mode it stays a dark
+   panel one step off the page (chalk) instead of flipping bright, so the page
+   reads as dark throughout. Its content keeps the on-brand tint. */
+html[data-theme="dark"] [data-story] {
+  background-color: var(--color-chalk);
+}
+
+/* The hero's photo scrim stays dark in BOTH themes, so focus rings inside it
+   stay on-brand - the brand blue would vanish on the night-sky photo. */
+[data-hero] {
+  --color-ring: var(--color-on-brand);
+}
+
+/* Arabic typography: Cairo joins script, so no tracking, no width axis and
+   roomier lines. Latin islands (VELO, product names) carry lang="en" and
+   keep Archivo; the overrides below are scoped to elements that ARE Arabic,
+   so a lang="en" island keeps the approved Archivo look inside an Arabic
+   page. */
+:lang(ar) {
+  font-family: var(--font-arabic);
+  line-height: 1.7;
+}
+
+/** Latin islands get the Latin stack explicitly (they would inherit Cairo). */
+:lang(en) {
+  font-family: var(--font-sans);
+}
+
+.type-display:lang(ar) {
+  font-stretch: 100%;
+  letter-spacing: 0;
+  line-height: 1.25;
+}
+
+.type-title:lang(ar) {
+  font-stretch: 100%;
+  letter-spacing: 0;
+  line-height: 1.45;
+}
+
+/* The Arabic hero wordmark (فيلو) is real Arabic text nested inside the
+   display heading, so the island - and the SplitText masks/words inside it -
+   would pick up the generic :lang(ar) 1.7 line-height and balloon the h1's
+   inline-block. It keeps the heading's own display metric instead. */
+.hero-wordmark:lang(ar),
+.hero-wordmark:lang(ar) * {
+  line-height: 1.25;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* ---------------------------------- dark ----------------------------------
+ * The @theme values above compile to --color-* custom properties, and every
+ * utility (bg-ink, text-paper, ...) reads them as vars - so re-declaring the
+ * palette under html[data-theme="dark"] re-themes the whole site.
+ *
+ * The selector is html-scoped on purpose: a few components (announcement bar,
+ * mobile menu) also carry a data-theme="dark" marker on a section, meaning
+ * "this panel is a dark accent" - it must not re-declare the palette. Those
+ * panels simply read the global vars, so they stay dark accents in light mode
+ * and flip to light accents in dark mode.
+ *
+ * The brand blue and the accent orange are deliberately identical in both
+ * themes: they are fills that carry fixed on-colour text, so their contrast
+ * does not depend on the theme.
+ * ------------------------------------------------------------------------ */
+html {
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --color-paper: #0a1026;
+  --color-surface: #151d40;
+  --color-chalk: #121a38;
+  --color-fog: #2a3357;
+  --color-line: #7c88b8;
+  --color-graphite: #aeb6d4;
+  --color-ink: #f2f4fc;
+  --color-danger: #ff6b61;
+  /* The plate never darkens: photos multiply onto it, so it keeps the paler
+     light tint in dark mode (the light-mode value it had before the
+     periwinkle recolour) instead of inheriting the stronger light-mode plate. */
+  --color-plate: #e0e6f7;
+}
+
+html[data-theme="dark"] {
+  --color-ring: var(--color-ink);
+}
+
+html[data-theme="dark"] [data-theme="dark"] {
+  --color-ring: var(--color-paper);
+  --color-on-brand: var(--color-paper);
+}
+
+/* Photos keep `multiply` in both themes: every image sits on a `plate` tint
+   (see the token above), so the baked-in white backdrop becomes that tint
+   instead of a white rectangle - no `mix-blend-mode: normal` override. */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* The colour cross-fade only runs while the theme is actually changing
+     (the class is added for one swap by useTheme), so ordinary hover states
+     stay instant and snappy. */
+  html.theme-transition *,
+  html.theme-transition *::before,
+  html.theme-transition *::after {
+    transition-property:
+      background-color, color, border-color, outline-color, fill, stroke, text-decoration-color;
+    transition-duration: 0.4s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* Circular palette reveal: the old snapshot stays put while the new one
+   unwinds from the toggle button's coordinates (--tv-x/--tv-y set by
+   useTheme). The centre is relative to the snapshot, which is viewport
+   sized, so page coordinates work directly. 0% -> 150% guarantees the far
+   corner of any viewport is covered (a corner-to-corner wipe measures
+   ~141% of the reference radius), and the expo-style curve keeps the
+   motion soft instead of mechanical. */
+html::view-transition-old(root) {
+  animation: none;
+}
+
+html::view-transition-new(root) {
+  animation: theme-reveal 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes theme-reveal {
+  from {
+    clip-path: circle(0% at var(--tv-x, 100%) var(--tv-y, 0));
+  }
+  to {
+    clip-path: circle(150% at var(--tv-x, 100%) var(--tv-y, 0));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html::view-transition-old(root),
+  html::view-transition-new(root) {
+    animation: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Archivo is a variable font with a width axis; headlines use the wide end. */
+@utility type-display {
+  font-stretch: 125%;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+}
+
+@utility type-title {
+  font-stretch: 112%;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+/* Every section heading shares one display scale — one step under the hero
+   wordmark — so the single-page flow keeps a single typographic rhythm. */
+@utility type-heading {
+  font-size: clamp(2.5rem, 11vw, 10rem);
+  text-wrap: balance;
+}
+
+/* Hero scrim: the campaign photo is busy exactly where the wordmark and the
+   CTAs sit, so an ink veil sits between photo and content - stronger at the
+   top and bottom, lightest in the middle so the photo still reads. The deep
+   ink value is hard-coded (like dialog::backdrop) because the scrim stays
+   dark in BOTH themes; the alphas are tuned against the measured 95th
+   percentile background luminance (scripts/hero-contrast.mjs). */
+@utility hero-scrim {
+  background-image: linear-gradient(
+    to bottom,
+    rgb(11 19 48 / 0.5) 0%,
+    rgb(11 19 48 / 0.35) 45%,
+    rgb(11 19 48 / 0.65) 100%
+  );
+
+  /* Below 768px the same photo is cropped to portrait and the tagline lands
+     over the brightest part of the frame (the cream hoodie and the white
+     sole), so the upper third takes a denser veil there. Same overlay, tuned
+     per composition - see the measured numbers in the final report. */
+  @media (width < 768px) {
+    background-image: linear-gradient(
+      to bottom,
+      rgb(11 19 48 / 0.58) 0%,
+      rgb(11 19 48 / 0.62) 33%,
+      rgb(11 19 48 / 0.4) 65%,
+      rgb(11 19 48 / 0.68) 100%
+    );
+  }
+}
+
+/* Native checkboxes and radios paint an opaque white box in Chromium, so they
+   are re-drawn from palette tints (surface fill, line border, brand + on-brand
+   when checked). The tick is baked as an SVG data URI because the checked fill
+   is the fixed brand blue in both themes. */
+@utility checkbox {
+  appearance: none;
+  border: 1px solid var(--color-line);
+  border-radius: 0.1875rem;
+  background-color: var(--color-surface);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 0.75rem;
+
+  &:hover {
+    border-color: var(--color-ink);
+  }
+
+  &:checked {
+    border-color: var(--color-brand);
+    background-color: var(--color-brand);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23f4f6ff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' d='M3.5 8.5l3 3 6-6'/%3E%3C/svg%3E");
+  }
+}
+
+@utility radio {
+  appearance: none;
+  border: 1px solid var(--color-line);
+  border-radius: 9999px;
+  background-color: var(--color-surface);
+
+  &:hover {
+    border-color: var(--color-ink);
+  }
+
+  &:checked {
+    border-color: var(--color-brand);
+    background-color: var(--color-brand);
+    background-image: radial-gradient(
+      circle at center,
+      var(--color-on-brand) 0 0.22rem,
+      transparent 0.22rem
+    );
+  }
+}
+
+@utility skip-link {
+  position: absolute;
+  inset-inline-start: 1rem;
+  top: -4rem;
+  z-index: 100;
+  padding: 0.75rem 1.25rem;
+  border-radius: 9999px;
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+  font-weight: 600;
+  transition: top 0.15s ease;
+
+  &:focus {
+    top: 1rem;
+  }
+}

@@ -1,0 +1,3 @@
+# robots.txt for the VELO demo store
+User-agent: *
+Disallow: /

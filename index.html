@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
+    <meta name="theme-color" content="#D0D9F7" />
+    <style>
+      /* First paint goes straight to the palette, so no white flash shows
+         before the stylesheet lands (mirrors --color-paper per theme). */
+      html {
+        background-color: #d0d9f7;
+      }
+      html[data-theme="dark"] {
+        background-color: #0a1026;
+      }
+    </style>
+    <script>
+      (function () {
+        try {
+          // Apply the stored colour theme before first paint (no flash).
+          if (JSON.parse(localStorage.getItem("velo:theme") || '"light"') === "dark") {
+            document.documentElement.setAttribute("data-theme", "dark");
+          }
+        } catch (error) {
+          /* default to light when storage is unavailable */
+        }
+        try {
+          // Apply the stored language before first paint so Arabic users get
+          // RTL from the first frame. The key mirrors STORAGE_KEYS.language.
+          var stored = JSON.parse(localStorage.getItem("velo:language") || "null");
+          var lang =
+            stored === "ar" || stored === "en"
+              ? stored
+              : (navigator.language || "").toLowerCase().indexOf("ar") === 0
+                ? "ar"
+                : "en";
+          document.documentElement.lang = lang;
+          document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+        } catch (error) {
+          /* keep the default en/ltr */
+        }
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="VELO is a demo sneaker storefront with a build-time snapshot of real Nike product listings. Demo only - no sales."
+    />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>VELO | Sneaker storefront demo</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
