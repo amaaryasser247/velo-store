@@ -73,7 +73,7 @@ export default function Layout() {
       <main ref={mainRef} id="main" tabIndex={-1} className="flex-1 outline-none">
         <Outlet />
       </main>
-      {/* Opaque plate under the footer gap: the fixed home hero photo must
+      {/* Opaque plate under the footer gap: the pinned home hero photo must
           never show through the space the footer's top margin used to leave
           (that margin now lives here as padding). */}
       <div className="bg-paper pt-24">

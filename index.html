@@ -50,6 +50,12 @@
     <title>VELO | Sneaker storefront demo</title>
   </head>
   <body>
+    <!-- The hero backdrop shell portals in here (HeroSection): the sticky
+         photo must start at the first pixel of the page, not below the
+         navbar, so it covers the viewport exactly like the fixed layer it
+         replaces. `display: contents` hands the shell straight to the body
+         box; index.css pulls #root up by the shell's height. -->
+    <div id="hero-backdrop-slot"></div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { products } from "../../data/products";
 import { useFormat } from "../../i18n/format";
@@ -76,9 +77,10 @@ export default function HeroSection() {
 
         /**
          * Scroll-linked hero exit, created once the intro has landed and
-         * scrubbed in BOTH scroll directions. The photo is viewport-fixed,
-         * so the type drifts over the still photo as the page rises: the
-         * wordmark lags most, the tagline a little less, the buttons least.
+         * scrubbed in BOTH scroll directions. The photo is pinned to the
+         * viewport (see the backdrop shell), so the type drifts over the
+         * still photo as the page rises: the wordmark lags most, the
+         * tagline a little less, the buttons least.
          */
         function createScrub(): void {
           const scrubY = (desktop: number, mobile: number): (() => number) => () =>
@@ -110,9 +112,8 @@ export default function HeroSection() {
           // <= 0.5s reprise for client-side navigation back to Home.
           gsap.set(wordmark, { y: DIST.riseSmall, autoAlpha: 0 });
           gsap.set(buttonEls, { y: DIST.riseSmall, autoAlpha: 0 });
-          // The backdrop waits out Layout's 350ms route transition: while
-          // <main> carries a transform it is the containing block of the
-          // fixed photo, so the photo would flash at a page-wide zoom. A
+          // The backdrop waits out Layout's 350ms route transition so the
+          // photo never appears before the page itself has settled. A
           // language re-run has no transition, so the photo stays put.
           if (bg && !isReRun) {
             gsap.set(bg, { autoAlpha: 0 });
@@ -137,10 +138,10 @@ export default function HeroSection() {
           gsap.set(buttonEls, { y: DIST.riseSmall, autoAlpha: 0 });
 
           // The backdrop photo fades in and settles from a slight overscale.
-          // The fade waits out Layout's 350ms route transition for the same
-          // containing-block reason as the short reprise; the settle starts
-          // immediately (still hidden), is transform-only and cannot shift
-          // layout, and the fade stays well under 300ms for the LCP element.
+          // The fade waits out Layout's 350ms route transition just like the
+          // short reprise; the settle starts immediately (still hidden), is
+          // transform-only and cannot shift layout, and the fade stays well
+          // under 300ms for the LCP element.
           if (bg) {
             gsap.set(bg, { autoAlpha: 0, scale: 1.06 });
             tl.to(bg, { autoAlpha: 1, duration: 0.28 }, 0.4);
@@ -221,20 +222,19 @@ export default function HeroSection() {
     },
   );
 
-  return (
-    <section ref={sectionRef} data-hero aria-labelledby="hero-title" className="relative overflow-hidden">
-      {/* Full-bleed backdrop, fixed to the viewport: the page scrolls over a
-          still photo. z -10 keeps it behind every paper plate on the page,
-          so the sections below the hero cover it as they arrive. Decorative
-          (alt="") - the h1 carries the meaning - and never lazy: the photo
-          is the LCP element.
-
-          The height is pinned to 100vh (the large viewport) rather than
-          stretching to the dynamic viewport (inset-0): on phones whose
-          browser toolbars slide away during scroll (Firefox Android, iOS
-          Safari) a stretched cover photo re-crops on every toolbar move,
-          which reads as a random zoom. 100vh never budges through them. */}
-      <picture className="fixed inset-x-0 top-0 -z-10 block h-screen" aria-hidden="true">
+  // The backdrop markup travels through a portal into the first slot in
+  // <body> (index.html) so its sticky box starts at the very top of the page
+  // - not below the navbar - whatever the chrome above <main> measures. The
+  // app is pulled back up by the shell's height in index.css, so the page's
+  // flow, its height and every scroll position stay exactly as they were.
+  const backdropSlot = document.getElementById("hero-backdrop-slot");
+  const backdrop = (
+    <div
+      data-hero-backdrop
+      aria-hidden="true"
+      className="pointer-events-none sticky top-0 -z-10 h-screen overflow-hidden"
+    >
+      <picture className="block h-full w-full">
         <source media="(max-width: 767px)" type="image/avif" srcSet={heroSrcSet("hero-mobile", MOBILE_WIDTHS, "avif")} sizes="100vw" />
         <source media="(max-width: 767px)" type="image/webp" srcSet={heroSrcSet("hero-mobile", MOBILE_WIDTHS, "webp")} sizes="100vw" />
         <source media="(max-width: 767px)" type="image/jpeg" srcSet={heroSrcSet("hero-mobile", MOBILE_WIDTHS, "jpg")} sizes="100vw" />
@@ -252,66 +252,101 @@ export default function HeroSection() {
           className="h-full w-full object-cover"
         />
       </picture>
+    </div>
+  );
 
-      {/* Ink veil between the busy photo and the content (see hero-scrim).
-          It stays section-anchored - not viewport-fixed - so the gradient
-          always spans exactly the box the text sits in. */}
-      <div aria-hidden="true" className="hero-scrim absolute inset-0" />
+  return (
+    <>
+      {/* Full-bleed backdrop: the page scrolls over a still photo.
 
-      <Container className="relative pt-4 sm:pt-8">
-        <h1
-          id="hero-title"
-          lang={isAr ? "ar" : "en"}
-          className="type-display -ms-[0.04em] select-none text-[clamp(3rem,26vw,24rem)] text-on-brand"
-        >
-          {/* The wordmark in the page's own script: VELO as a Latin island in
-              English, فيلو as real Arabic in Arabic (the split below stays
-              word-level). Keyed per language so a live switch remounts it
-              cleanly out of SplitText's markup. */}
-          <span
-            key={isAr ? "ar" : "en"}
-            ref={wordmarkRef}
-            aria-hidden={isAr ? undefined : true}
+          Sticky and flow-sized, not `position: fixed`: Firefox can reserve
+          a classic, space-taking scrollbar (~24px on Android with "always
+          show scrollbars"; it sits right in English, left in Arabic) while
+          fixed layers still span the whole window - the un-scrimmed photo
+          then pokes out as a bright lane beside the navbar and every paper
+          plate. A sticky box ends exactly at the content edge in every
+          engine and scrollbar mode, and the flow width also keeps it
+          stable when the mobile browser toolbar slides away.
+
+          Height is 100vh (the large viewport, never the dynamic one): a
+          stretched cover photo re-crops on every toolbar move, which reads
+          as a random zoom; 100vh never budges through them. z -10 keeps
+          the shell behind every paper plate and the footer, so the
+          sections below the hero cover it as they arrive. Decorative
+          (alt="") - the h1 carries the meaning - and never lazy: the
+          photo is the LCP element. */}
+      {backdropSlot ? createPortal(backdrop, backdropSlot) : null}
+
+      <section ref={sectionRef} data-hero aria-labelledby="hero-title" className="relative overflow-hidden">
+        {/* Ink veil between the busy photo and the content (see hero-scrim).
+            It stays section-anchored - not viewport-fixed - so the gradient
+            always spans exactly the box the text sits in. */}
+        <div aria-hidden="true" className="hero-scrim absolute inset-0" />
+
+        <Container className="relative pt-4 sm:pt-8">
+          <h1
+            id="hero-title"
             lang={isAr ? "ar" : "en"}
-            dir={isAr ? undefined : "ltr"}
-            className="hero-wordmark inline-block whitespace-nowrap"
+            className="type-display -ms-[0.04em] select-none text-[clamp(3rem,26vw,24rem)] text-on-brand"
           >
-            {isAr ? "فيلو" : "VELO"}
-          </span>
-          <span className="sr-only" lang={i18n.resolvedLanguage ?? "en"}>
-            {t("hero.srName")}
-          </span>
-        </h1>
+            {/* The wordmark in the page's own script: VELO as a Latin island
+                in English, فيلو as real Arabic in Arabic (the split below
+                stays word-level). Keyed per language so a live switch
+                remounts it cleanly out of SplitText's markup. */}
+            <span
+              key={isAr ? "ar" : "en"}
+              ref={wordmarkRef}
+              aria-hidden={isAr ? undefined : true}
+              lang={isAr ? "ar" : "en"}
+              dir={isAr ? undefined : "ltr"}
+              className="hero-wordmark inline-block whitespace-nowrap"
+            >
+              {isAr ? "فيلو" : "VELO"}
+            </span>
+            <span className="sr-only" lang={i18n.resolvedLanguage ?? "en"}>
+              {t("hero.srName")}
+            </span>
+          </h1>
 
-        {/* Tagline on one side, actions on the other from md up (stacked on
-            phones); the buttons push to the inline end, so the split mirrors
-            with the language. The row keeps the old shoe-plate height from
-            md up (347.5px = the removed 34rem 8:5 figure), so nothing below
-            the hero moves. */}
-        <div className="flex flex-col pb-14 pt-6 md:min-h-[347.5px] md:flex-row md:items-center">
-          <p ref={taglineRef} className="text-on-brand text-lg leading-snug sm:text-xl md:max-w-[30rem]">
-            {catalogSize > 0
-              ? tPlural("hero.pairs", catalogSize, { sources: list(sourceBrands()) })
-              : t("hero.fallbackTagline")}
-          </p>
-          <div ref={actionsRef} className="mt-6 flex flex-wrap gap-3 md:mt-0 md:ms-auto">
-            <ButtonLink to="/shop" size="lg" className="w-full sm:w-auto">
-              {t("hero.shopAll")}
-            </ButtonLink>
-            <ButtonLink to="/shop?new=1" variant="inverse" size="lg" className="w-full sm:w-auto">
-              {t("hero.newArrivals")}
-            </ButtonLink>
-          </div>
+          {/* Tagline on one side, actions on the other from md up (stacked on
+              phones); the buttons push to the inline end, so the split
+              mirrors with the language. The row keeps the old shoe-plate
+              height from md up (347.5px = the removed 34rem 8:5 figure), so
+              nothing below the hero moves. */}
+          <div className="flex flex-col pb-14 pt-6 md:min-h-[347.5px] md:flex-row md:items-center">
+            {/* Keyed per language, like the wordmark: SplitText rewrites the
+                paragraph's children, so without a fresh node a live switch
+                leaves the OLD sentence behind - the split's revert restores
+                the text it captured, clobbering React's update (which also
+                rendered the English sentence right-to-left under RTL). */}
+            <p
+              key={i18n.resolvedLanguage ?? "en"}
+              ref={taglineRef}
+              className="text-on-brand text-lg leading-snug sm:text-xl md:max-w-[30rem]"
+            >
+              {catalogSize > 0
+                ? tPlural("hero.pairs", catalogSize, { sources: list(sourceBrands()) })
+                : t("hero.fallbackTagline")}
+            </p>
+            <div ref={actionsRef} className="mt-6 flex flex-wrap gap-3 md:mt-0 md:ms-auto">
+              <ButtonLink to="/shop" size="lg" className="w-full sm:w-auto">
+                {t("hero.shopAll")}
+              </ButtonLink>
+              <ButtonLink to="/shop?new=1" variant="inverse" size="lg" className="w-full sm:w-auto">
+                {t("hero.newArrivals")}
+              </ButtonLink>
+            </div>
 
-          {/* Invisible layout box standing in for the removed shoe panel:
-              the same 8/5 plate geometry (full width below md) keeps the
-              phone hero's height exactly where it was. Nothing paints here;
-              from md up the row's min-height carries the geometry. */}
-          <div aria-hidden="true" className="mt-8 border-2 border-transparent p-2 md:hidden">
-            <div className="aspect-[8/5]" />
+            {/* Invisible layout box standing in for the removed shoe panel:
+                the same 8/5 plate geometry (full width below md) keeps the
+                phone hero's height exactly where it was. Nothing paints
+                here; from md up the row's min-height carries the geometry. */}
+            <div aria-hidden="true" className="mt-8 border-2 border-transparent p-2 md:hidden">
+              <div className="aspect-[8/5]" />
+            </div>
           </div>
-        </div>
-      </Container>
-    </section>
+        </Container>
+      </section>
+    </>
   );
 }

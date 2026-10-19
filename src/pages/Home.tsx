@@ -36,10 +36,11 @@ export default function Home() {
     <>
       <HeroSection />
 
-      {/* The hero photo is viewport-fixed, so everything after the hero gets
-          its own opaque plate: without it the still photo would show through
-          these sections on the way past. Same paper the canvas used to show,
-          so the pixels below the hero are unchanged. */}
+      {/* The hero photo is pinned behind the page (see the backdrop shell in
+          HeroSection), so everything after the hero gets its own opaque
+          plate: without it the still photo would show through these sections
+          on the way past. Same paper the canvas used to show, so the pixels
+          below the hero are unchanged. */}
       <div className="bg-paper">
         <AboutSection />
         <FeaturedCollections />
