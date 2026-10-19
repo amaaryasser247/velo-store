@@ -227,8 +227,14 @@ export default function HeroSection() {
           still photo. z -10 keeps it behind every paper plate on the page,
           so the sections below the hero cover it as they arrive. Decorative
           (alt="") - the h1 carries the meaning - and never lazy: the photo
-          is the LCP element. */}
-      <picture className="fixed inset-0 -z-10 block" aria-hidden="true">
+          is the LCP element.
+
+          The height is pinned to 100vh (the large viewport) rather than
+          stretching to the dynamic viewport (inset-0): on phones whose
+          browser toolbars slide away during scroll (Firefox Android, iOS
+          Safari) a stretched cover photo re-crops on every toolbar move,
+          which reads as a random zoom. 100vh never budges through them. */}
+      <picture className="fixed inset-x-0 top-0 -z-10 block h-screen" aria-hidden="true">
         <source media="(max-width: 767px)" type="image/avif" srcSet={heroSrcSet("hero-mobile", MOBILE_WIDTHS, "avif")} sizes="100vw" />
         <source media="(max-width: 767px)" type="image/webp" srcSet={heroSrcSet("hero-mobile", MOBILE_WIDTHS, "webp")} sizes="100vw" />
         <source media="(max-width: 767px)" type="image/jpeg" srcSet={heroSrcSet("hero-mobile", MOBILE_WIDTHS, "jpg")} sizes="100vw" />

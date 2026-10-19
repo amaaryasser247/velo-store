@@ -90,6 +90,25 @@
   }
 }
 
+/* ------------------------------- scrollbars -------------------------------
+ * Firefox can reserve a classic, space-taking scrollbar - on Android with
+ * "always show scrollbars" it eats roughly 24px of the layout width (normal
+ * flow ends at the content edge, while the viewport-fixed hero photo still
+ * spans the whole window), so the un-scrimmed photo pokes out as a bright
+ * lane to the right of the navbar and every paper plate. Touch platforms
+ * use overlay scrollbars by convention, so hiding the bar on coarse
+ * pointers removes that reserved lane there. The -moz-appearance probe
+ * keeps Chromium and WebKit (whose mobile bars are overlays anyway) and
+ * desktop Firefox - where fixed layers already match the content edge -
+ * completely untouched. */
+@supports (-moz-appearance: none) {
+  @media (pointer: coarse) {
+    html {
+      scrollbar-width: none;
+    }
+  }
+}
+
 :root {
   --color-ring: var(--color-brand);
 }
