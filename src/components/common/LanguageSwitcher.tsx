@@ -20,7 +20,7 @@ export default function LanguageSwitcher({ variant = "header" }: LanguageSwitche
   const ariaLabel = next === "ar" ? t("language.switchToArabic") : t("language.switchToEnglish");
   const className =
     variant === "header"
-      ? "grid h-11 place-items-center rounded-full px-2.5 text-sm font-semibold hover:bg-chalk"
+      ? "grid h-10 place-items-center rounded-full px-2.5 text-sm font-semibold hover:bg-chalk sm:h-11"
       : "rounded-full bg-on-brand/15 px-4 py-2 text-base font-semibold hover:bg-on-brand/25";
 
   return (

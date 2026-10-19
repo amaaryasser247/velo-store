@@ -5,7 +5,7 @@ import { useTheme } from "../../hooks/useTheme";
 import { gsap, prefersReducedMotion, useGSAP } from "../../lib/gsap";
 import { EASE } from "../../lib/motion";
 
-const iconButton = "relative grid size-11 place-items-center rounded-full hover:bg-chalk";
+const iconButton = "relative grid size-10 place-items-center rounded-full hover:bg-chalk sm:size-11";
 
 /**
  * Light/dark switch. The sun and moon cross-rotate into each other with a GSAP

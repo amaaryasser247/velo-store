@@ -155,14 +155,16 @@ export default function Navbar() {
     { scope: headerRef },
   );
 
+  // 40px tap targets under 640px keep the row inside the bar on narrow
+  // phones (and on any width where the scrollbar takes space).
   const iconButton =
-    "relative grid size-11 place-items-center rounded-full hover:bg-chalk";
+    "relative grid size-10 place-items-center rounded-full hover:bg-chalk sm:size-11";
 
   return (
     <header ref={headerRef} className="sticky top-0 z-40 border-b border-fog bg-surface">
       <Container className="flex h-16 items-center justify-between gap-2 sm:gap-4">
         <Link to="/" aria-label={t("nav.home")}>
-          <span lang="en" className="type-display text-2xl sm:text-3xl">
+          <span lang="en" className="type-display text-xl min-[400px]:text-2xl sm:text-3xl">
             VELO
           </span>
         </Link>
@@ -207,7 +209,7 @@ export default function Navbar() {
             to={accountTo}
             aria-label={accountLabel}
             data-account-link
-            className={`${iconButton} max-[400px]:hidden`}
+            className={`${iconButton} max-[512px]:hidden`}
           >
             {accountInitial === null ? (
               <User className="size-5" aria-hidden="true" />
@@ -223,7 +225,7 @@ export default function Navbar() {
           <Link
             to="/wishlist"
             aria-label={tPlural("nav.wishlistCount", wishlistCount)}
-            className={`${iconButton} max-[400px]:hidden`}
+            className={`${iconButton} max-[512px]:hidden`}
           >
             <Heart className="size-5" aria-hidden="true" />
             <CountBadge count={wishlistCount} />
